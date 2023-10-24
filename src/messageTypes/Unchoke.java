@@ -11,7 +11,7 @@ public class Unchoke
 	{
 		msgLen = ByteBuffer.allocate(4).putInt(0).array(); 
 		int i;
-		for(i = 0; i < messageLen.length; i++)
+		for(i = 0; i < msgLen.length; i++)
 		{
 			unchokeMsg[i] = msgLen[i];
 		}
