@@ -1,4 +1,4 @@
-// This file writes the peer log  into the log file ‘log_peer_[peerID].log'
+// This file writes the peer log into the log file ‘log_peer_[peerID].log'
 
 import PeerInfo;
 import java.time.LocalDateTime;
