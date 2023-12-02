@@ -1,41 +1,52 @@
 package configure;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.HashMap;
 
 import peer.PeerInfo;
 
 public class Common {
-    public int numPreferredNeighbors;
-    public int unchokingInterval;
-    public int optimalUnchokingInterval;
-    public String fileName;
-    public long fileSize;
-    public long pieceSize;
+    public static int numPreferredNeighbors;
+    public static int unchokingInterval;
+    public static int optimalUnchokingInterval;
+    public static String fileName;
+    public static long fileSize;
+    public static long pieceSize;
     public PeerInfo peerInfo;
 
     public Common(String path) {
-        String str;
+        readCommonFile(path + "/Common.cfg");
+    }
 
+    /**
+     * Reads the common configuration file
+     * 
+     * @param commonFilePath Path to the common configuration file
+     */
+    public static HashMap<String, Object> readCommonFile(String commonFilePath) {
+        HashMap<String, Object> res = new HashMap<String, Object>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader(path + "/Common.cfg"));
-            Vector<String> configs = new Vector<String>();
+            File cfp = new File(commonFilePath);
+            BufferedReader sc = new BufferedReader(new FileReader(cfp));
 
-            while ((str = in.readLine()) != null) {
-                String[] tokens = str.split("\\s+");
-                configs.addElement(tokens[1]);
+            while (sc.ready()) {
+                String data = sc.readLine();
+                String[] arr = data.split("\\s+");
+                res.put(arr[0], arr[1]);
             }
+            sc.close();
 
-            numPreferredNeighbors = Integer.parseInt(configs.elementAt(0));
-            unchokingInterval = Integer.parseInt(configs.elementAt(1));
-            optimalUnchokingInterval = Integer.parseInt(configs.elementAt(2));
-            fileName = configs.elementAt(3);
-            fileSize = Long.parseLong(configs.elementAt(4));
-            pieceSize = Long.parseLong(configs.elementAt(5));
-
-            in.close();
+            numPreferredNeighbors = Integer.parseInt((String) res.get("NumberOfPreferredNeighbors"));
+            unchokingInterval = Integer.parseInt((String) res.get("UnchokingInterval"));
+            optimalUnchokingInterval = Integer.parseInt((String) res.get("OptimisticUnchokingInterval"));
+            fileName = (String) res.get("FileName");
+            fileSize = Long.parseLong((String) res.get("FileSize"));
+            pieceSize = Long.parseLong((String) res.get("PieceSize"));
         } catch (Exception ex) {
             System.out.println(ex.toString());
         }
+        return res;
     }
 }

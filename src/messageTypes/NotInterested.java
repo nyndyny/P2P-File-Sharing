@@ -3,7 +3,7 @@ package messageTypes;
 import java.nio.ByteBuffer;
 
 public class NotInterested {
-    private byte[] notInterestedMessageBytes;
+    public byte[] notInterestedMessageBytes;
     private byte[] messageLengthBytes = new byte[4];
     private byte messageType = 3;
 

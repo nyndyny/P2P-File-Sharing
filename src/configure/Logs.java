@@ -23,6 +23,7 @@ public class Logs {
     public static File file;
     public static DateTimeFormatter formatDT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private static BufferedWriter buffWriter;
+    public static boolean Set = false;
     // PeerInfo peerInfo = new PeerInfo(peerID, peerAddress, peerPort, fileName);
 
     public static void startLogging(String pID) {
@@ -155,13 +156,15 @@ public class Logs {
     }
 
     public static void downloadCompletion() {
-        try {
-            String temp = formatDT.format(localDT) + " : Peer " + peerID + " has downloaded the complete file.";
-            buffWriter.append(temp);
-            buffWriter.newLine();
-            buffWriter.flush();
-        } catch (IOException e) {
-            System.err.println(e);
+        if (Set == true) {
+            try {
+                String temp = formatDT.format(localDT) + " : Peer " + peerID + " has downloaded the complete file.";
+                buffWriter.append(temp);
+                buffWriter.newLine();
+                buffWriter.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
     }
 

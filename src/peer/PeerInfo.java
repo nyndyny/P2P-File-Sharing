@@ -11,6 +11,12 @@ package peer;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.Vector;
 
 public class PeerInfo {
 	public int peerID;
@@ -18,13 +24,20 @@ public class PeerInfo {
 	public String peerAddress;
 	public Boolean hasFile;
 	public Vector<PeerInfo> remotePeers;
+	private Socket sock;
+	private int persPeerID;
+	private boolean check = false;
+
+	// Additional Peer attributes
+	private boolean interested;
+	private byte[] bitfield;
 
 	public PeerInfo(String path, String pID) {
 		String str;
 
 		try {
 			BufferedReader in = new BufferedReader(new FileReader(path + "/PeerInfo.cfg"));
-			remotePeers = new Vector<PeerInfo>();
+			remotePeers = new Vector<>();
 
 			while ((str = in.readLine()) != null) {
 				String[] tokens = str.split("\\s+");
@@ -41,7 +54,7 @@ public class PeerInfo {
 				}
 			}
 			in.close();
-		} catch (Exception ex) {
+		} catch (IOException ex) {
 			System.out.println(ex.toString());
 		}
 	}
@@ -51,5 +64,53 @@ public class PeerInfo {
 		peerAddress = pAddress;
 		peerPort = Integer.parseInt(pPort);
 		hasFile = Integer.parseInt(file) == 1;
+	}
+
+	public int getPersPeerID() {
+		return persPeerID;
+	}
+
+	public boolean Checker() {
+		return check;
+	}
+
+	public void setChecker(boolean val) {
+		this.check = val;
+	}
+
+	public void setPersPeerID(int persPeerID) {
+		this.persPeerID = persPeerID;
+	}
+
+	public boolean isInterested() {
+		return interested;
+	}
+
+	public void setInterested(boolean interested) {
+		this.interested = interested;
+	}
+
+	public byte[] getBitfield() {
+		return bitfield;
+	}
+
+	public int getPeerID() {
+		return peerID;
+	}
+
+	public void setPeerID(int peerID) {
+		this.peerID = peerID;
+	}
+
+	public void setBitfield(byte[] bitfield) {
+		this.bitfield = bitfield;
+	}
+
+	public Socket getSock() {
+		return sock;
+	}
+
+	public void setSock(Socket sock) {
+		this.sock = sock;
 	}
 }
