@@ -1,4 +1,4 @@
-package process;
+package configure;
 
 import java.io.*;
 import java.util.*;
