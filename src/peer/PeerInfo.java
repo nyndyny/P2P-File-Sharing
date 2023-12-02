@@ -1,3 +1,4 @@
+package peer;
 /*
  *                     CEN5501C Project2
  * This is the program starting remote processes.
@@ -18,8 +19,7 @@ public class PeerInfo {
 	public Boolean hasFile;
 	public Vector<PeerInfo> remotePeers;
 
-	public PeerInfo(String path, String pID)
-	{
+	public PeerInfo(String path, String pID) {
 		String str;
 
 		try {
@@ -41,15 +41,13 @@ public class PeerInfo {
 				}
 			}
 			in.close();
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			System.out.println(ex.toString());
 		}
 	}
 
-	public PeerInfo(String pID, String pAddress, String pPort, String file)
-	{
-		peerID =Integer.parseInt(pID);
+	public PeerInfo(String pID, String pAddress, String pPort, String file) {
+		peerID = Integer.parseInt(pID);
 		peerAddress = pAddress;
 		peerPort = Integer.parseInt(pPort);
 		hasFile = Integer.parseInt(file) == 1;
