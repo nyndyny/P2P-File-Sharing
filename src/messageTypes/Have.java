@@ -5,13 +5,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class haveMessage {
+public class Have {
     private static final int MESSAGE_LENGTH = 5; // 4 bytes for the piece index + 1 byte for the message ID
     private static final byte INDEX_FIELD = 4; // contains a 4-byte piece index field
 
     private int pieceIndex;
 
-    public haveMessage(int pieceIndex) { // constructor
+    public Have(int pieceIndex) { // constructor
         this.pieceIndex = pieceIndex;
     }
 
