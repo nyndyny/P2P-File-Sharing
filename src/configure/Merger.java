@@ -34,12 +34,12 @@ public class Merger {
                 Piece piece = PeerProcess.enumPieces.get(pieceNumber);
                 byte[] sizeBytes = new byte[INT_SIZE];
 
-                System.arraycopy(piece.payload, 0, sizeBytes, 0, INT_SIZE);
+                System.arraycopy(piece.assembledMessage, 0, sizeBytes, 0, INT_SIZE);
                 int size = ByteBuffer.wrap(sizeBytes).getInt();
                 size -= INT_SIZE;
 
                 byte[] buffer = new byte[size];
-                System.arraycopy(piece.payload, PIECE_DATA_OFFSET, buffer, 0, buffer.length);
+                System.arraycopy(piece.assembledMessage, PIECE_DATA_OFFSET, buffer, 0, buffer.length);
 
                 outputStream.write(buffer);
                 i++;
@@ -51,9 +51,9 @@ public class Merger {
             int remainingSize = (int) (fileSize % pieceSize);
             byte[] remainingBuffer = new byte[remainingSize];
 
-            System.arraycopy(lastPiece.payload, PIECE_DATA_OFFSET, remainingBuffer, 0, remainingBuffer.length);
+            System.arraycopy(lastPiece.assembledMessage, PIECE_DATA_OFFSET, remainingBuffer, 0, remainingBuffer.length);
             outputStream.write(remainingBuffer);
-
+            outputStream.close();
         } catch (FileNotFoundException e) {
             System.err.println("File not found: " + e.getMessage());
         } catch (IOException e) {

@@ -32,7 +32,7 @@ public class Parser {
                 currentPieceNumber++;
                 bytesRead = inputStream.read(buffer);
             }
-
+            inputStream.close();
         } catch (FileNotFoundException fileNotFoundException) {
             System.err.println("The file was not found: " + fileNotFoundException.getMessage());
         } catch (IOException ioException) {

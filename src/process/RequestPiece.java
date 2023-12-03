@@ -44,11 +44,11 @@ public class RequestPiece extends Thread {
             synchronized (PeerProcess.peersList) {
                 Iterator<PeerInfo> iterator = PeerProcess.peersList.iterator();
                 while (iterator.hasNext()) {
-                    PeerInfo p = iterator.next();
-                    System.out.println(p.getPersPeerID());
-                    if (p.getPeerID() == peerID) {
-                        requestingPeerID = p.getPersPeerID();
-                        socket = p.getSock();
+                    peer = (PeerInfo) iterator.next();
+                    System.out.println(peer.getPersPeerID());
+                    if (peer.getPeerID() == peerID) {
+                        requestingPeerID = peer.getPersPeerID();
+                        socket = peer.getSock();
                         break;
                     }
                 }
@@ -187,7 +187,7 @@ public class RequestPiece extends Thread {
         Iterator<PeerConnection> iterator = PeerProcess.hasFullFile.iterator();
 
         while (iterator.hasNext()) {
-            PeerConnection peer = iterator.next();
+            PeerConnection peer = (PeerConnection) iterator.next();
 
             synchronized (PeerProcess.msgPool) {
                 Message msg = new Message();

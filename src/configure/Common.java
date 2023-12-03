@@ -17,7 +17,7 @@ public class Common {
     public PeerInfo peerInfo;
 
     public Common(String path) {
-        readCommonFile(path + "/Common.cfg");
+        readCommonFile(path);
     }
 
     /**
@@ -28,7 +28,7 @@ public class Common {
     public static HashMap<String, Object> readCommonFile(String commonFilePath) {
         HashMap<String, Object> res = new HashMap<String, Object>();
         try {
-            File cfp = new File(commonFilePath);
+            File cfp = new File(commonFilePath + "/Common.cfg");
             BufferedReader sc = new BufferedReader(new FileReader(cfp));
 
             while (sc.ready()) {

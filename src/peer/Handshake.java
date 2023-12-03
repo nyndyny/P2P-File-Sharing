@@ -12,8 +12,10 @@ import java.nio.charset.StandardCharsets;
 public class Handshake {
     public static String header = "P2PFILESHARINGPROJ" + "0000000000";
     public String message;
+    public byte[] content = new byte[32];
 
     public Handshake(int pID) {
         message = header + Integer.toString(pID);
+        content = message.getBytes();
     }
 }

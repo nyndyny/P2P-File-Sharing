@@ -12,7 +12,7 @@ public class PeerInfoParser {
     private int peerPort;
     private boolean hasCompleteFile;
 
-    private final String peerInfoFilePath = new File(System.getProperty("user.dir")).getParent() + "\\PeerInfo.cfg";
+    private final String peerInfoFilePath = new File(System.getProperty("user.dir")).getParent() + "/PeerInfo.cfg";
 
     public PeerInfoParser(int currentPeerID) {
         this.currentPeerID = currentPeerID;

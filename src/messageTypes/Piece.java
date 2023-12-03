@@ -3,11 +3,11 @@ package messageTypes;
 import java.nio.ByteBuffer;
 
 public class Piece {
-    public byte[] payload;
+    public byte[] payload; // message
     public byte[] lengthBytes = new byte[4];
     public byte messageType = 7;
     public byte[] indexBytes = new byte[4];
-    public byte[] assembledMessage;
+    public byte[] assembledMessage; // piecedata
 
     // Constructor
     public Piece(int index, byte[] payloadData) {

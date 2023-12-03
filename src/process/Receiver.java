@@ -89,7 +89,30 @@ public class Receiver extends Thread {
     }
 
     private void handleHaveMessage(byte[] message) {
-        int pieceIndex = ByteBuffer.wrap(message, 5, 4).getInt();
+        byte[] pieceInfo = new byte[4];
+        for (int i = 0, k = 5; i < pieceInfo.length; i++, k++) {
+            pieceInfo[i] = message[k];
+        }
+
+        int pieceIndex = ByteBuffer.wrap(pieceInfo).getInt();
+        Iterator<PeerInfo> pItr = PeerProcess.peersList.iterator();
+
+        while (pItr.hasNext()) {
+            PeerInfo p = (PeerInfo) pItr.next();
+
+            if (p.getSock().equals(socket)) {
+                byte[] bField = p.getBitfield();
+
+                try {
+                    synchronized (bField) {
+                        bField = updateBitField(bField, pieceIndex);
+                        p.setBitfield(bField);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         System.out.println("Have message received " + remotePeerID + " for piece " + pieceIndex);
         System.out.println();
@@ -104,7 +127,7 @@ public class Receiver extends Thread {
         synchronized (PeerProcess.msgPool) {
             Message msg = new Message();
             msg.setSock(socket);
-            msg.setMessage(piece.payload);
+            msg.setMessage(piece.assembledMessage);
             PeerProcess.msgPool.add(msg);
         }
     }
@@ -163,7 +186,7 @@ public class Receiver extends Thread {
         synchronized (PeerProcess.hasFullFile) {
             Iterator<PeerConnection> iterator = PeerProcess.hasFullFile.iterator();
             while (iterator.hasNext()) {
-                PeerConnection completeFile = iterator.next();
+                PeerConnection completeFile = (PeerConnection) iterator.next();
                 if (completeFile.getSocket().equals(socket)) {
                     completeFile.setCompleteFileDownloaded(true);
                     break;
@@ -188,5 +211,11 @@ public class Receiver extends Thread {
             System.exit(0);
         }
         return message;
+    }
+
+    public byte[] updateBitField(byte[] field, int pieceIndex) {
+        int position = pieceIndex - 1;
+        field[(position / 8) + 5] = (byte) (field[(position / 8) + 5] | (1 << (7 - (position % 8))));
+        return field;
     }
 }

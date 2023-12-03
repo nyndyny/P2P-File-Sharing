@@ -28,7 +28,6 @@ public class PeerInfo {
 	private int persPeerID;
 	private boolean check = false;
 
-	// Additional Peer attributes
 	private boolean interested;
 	private byte[] bitfield;
 
@@ -64,6 +63,9 @@ public class PeerInfo {
 		peerAddress = pAddress;
 		peerPort = Integer.parseInt(pPort);
 		hasFile = Integer.parseInt(file) == 1;
+	}
+
+	public PeerInfo() {
 	}
 
 	public int getPersPeerID() {
