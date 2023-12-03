@@ -24,6 +24,7 @@ public class Logs {
     public static DateTimeFormatter formatDT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private static BufferedWriter buffWriter;
     public static boolean Set = false;
+    public static boolean Check = false;
     // PeerInfo peerInfo = new PeerInfo(peerID, peerAddress, peerPort, fileName);
 
     public static void startLogging(String pID) {
