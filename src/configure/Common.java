@@ -20,11 +20,6 @@ public class Common {
         readCommonFile(path);
     }
 
-    /**
-     * Reads the common configuration file
-     * 
-     * @param commonFilePath Path to the common configuration file
-     */
     public static HashMap<String, Object> readCommonFile(String commonFilePath) {
         HashMap<String, Object> res = new HashMap<String, Object>();
         try {

@@ -136,13 +136,10 @@ public class Receiver extends Thread {
         int pieceIndex = ByteBuffer.wrap(message, 5, 4).getInt();
         Integer index = pieceIndex;
 
-        byte[] data = new byte[message.length - 9];
-        for (int i = 0, j = 9; i < data.length; i++, j++) {
-            data[i] = message[j];
-        }
+        byte[] data = extractDataFromMessage(message);
 
-        if (data.length == pieceSize && !PeerProcess.enumPieces.containsKey(index)) {
-            Piece piece = new Piece(pieceIndex, data);
+        if (isValidPieceData(pieceIndex, data)) {
+            Piece piece = createPiece(pieceIndex, data);
 
             synchronized (PeerProcess.enumPieces) {
                 PeerProcess.enumPieces.put(index, piece);
@@ -152,21 +149,38 @@ public class Receiver extends Thread {
                     e.printStackTrace();
                 }
             }
+
+            System.out.println("Piece " + pieceIndex + " received from " + remotePeerID);
+            System.out.println();
+            Logs.downloadingPiece(remotePeerID, pieceIndex);
+
+            updateBitfield(pieceIndex);
+
+            sendHaveMessage(pieceIndex);
+        }
+    }
+
+    private byte[] extractDataFromMessage(byte[] message) {
+        int dataStartIndex = 9;
+        int dataLength = message.length - dataStartIndex;
+        byte[] data = new byte[dataLength];
+
+        for (int i = 0, j = dataStartIndex; i < data.length; i++, j++) {
+            data[i] = message[j];
         }
 
-        System.out.println("Piece " + pieceIndex + " received from " + remotePeerID);
-        System.out.println();
-        Logs.downloadingPiece(remotePeerID, pieceIndex);
+        return data;
+    }
 
-        try {
-            synchronized (Bitfield.bitFieldBytes) {
-                Bitfield.updateBitfield(pieceIndex);
-                Thread.sleep(20);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    private boolean isValidPieceData(int pieceIndex, byte[] data) {
+        return data.length == pieceSize && !PeerProcess.enumPieces.containsKey(pieceIndex);
+    }
 
+    private Piece createPiece(int pieceIndex, byte[] data) {
+        return new Piece(pieceIndex, data);
+    }
+
+    private void sendHaveMessage(int pieceIndex) {
         Have have = new Have(pieceIndex);
         Iterator<PeerInfo> iterator = PeerProcess.peersList.iterator();
 
@@ -217,5 +231,16 @@ public class Receiver extends Thread {
         int position = pieceIndex - 1;
         field[(position / 8) + 5] = (byte) (field[(position / 8) + 5] | (1 << (7 - (position % 8))));
         return field;
+    }
+
+    private void updateBitfield(int pieceIndex) {
+        try {
+            synchronized (Bitfield.bitFieldBytes) {
+                Bitfield.updateBitfield(pieceIndex);
+                Thread.sleep(20);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

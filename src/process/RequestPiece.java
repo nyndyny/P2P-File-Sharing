@@ -1,19 +1,19 @@
 package process;
 
-import java.net.Socket;
-import java.util.Iterator;
-import java.util.Random;
-
-import configure.Merger;
 import configure.Logs;
-import peer.PeerConnection;
-import peer.Message;
-import peer.PeerInfo;
-import peer.PeerProcess;
+import configure.Merger;
 import messageTypes.Bitfield;
 import messageTypes.Interested;
 import messageTypes.NotInterested;
 import messageTypes.Request;
+import peer.Message;
+import peer.PeerConnection;
+import peer.PeerInfo;
+import peer.PeerProcess;
+
+import java.net.Socket;
+import java.util.Iterator;
+import java.util.Random;
 
 public class RequestPiece extends Thread {
 

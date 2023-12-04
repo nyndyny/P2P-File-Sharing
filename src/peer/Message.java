@@ -1,7 +1,6 @@
 package peer;
 
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class Message {
     int length;

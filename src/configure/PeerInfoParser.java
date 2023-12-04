@@ -40,11 +40,6 @@ public class PeerInfoParser {
         }
     }
 
-    /**
-     * Retrieves a list of peer IDs from the PeerInfo file.
-     *
-     * @return List of peer IDs.
-     */
     public ArrayList<Integer> getPeerIDs() {
         ArrayList<Integer> peerIDs = new ArrayList<>();
         File peerInfoFile = new File(peerInfoFilePath);
@@ -63,11 +58,6 @@ public class PeerInfoParser {
         return null;
     }
 
-    /**
-     * Retrieves complete information about all peers from the PeerInfo file.
-     *
-     * @return List of arrays containing information about each peer.
-     */
     public ArrayList<String[]> getAllPeerInfo() {
         ArrayList<String[]> allPeerInfo = new ArrayList<>();
         File peerInfoFile = new File(peerInfoFilePath);
@@ -90,11 +80,6 @@ public class PeerInfoParser {
         return null;
     }
 
-    /**
-     * Retrieves a list of peer IP addresses from the PeerInfo file.
-     *
-     * @return List of peer IP addresses.
-     */
     public ArrayList<String> getPeerIPs() {
         ArrayList<String> peerIPs = new ArrayList<>();
         File peerInfoFile = new File(peerInfoFilePath);

@@ -25,7 +25,6 @@ public class Logs {
     private static BufferedWriter buffWriter;
     public static boolean Set = false;
     public static boolean Check = false;
-    // PeerInfo peerInfo = new PeerInfo(peerID, peerAddress, peerPort, fileName);
 
     public static void startLogging(String pID) {
         peerID = pID;

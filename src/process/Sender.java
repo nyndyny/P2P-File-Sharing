@@ -20,31 +20,47 @@ public class Sender extends Thread {
                 e.printStackTrace();
             }
 
-            if (!PeerProcess.msgPool.isEmpty()) {
-                synchronized (PeerProcess.msgPool) {
-                    Message message = PeerProcess.msgPool.poll();
-                    if (message != null) {
-                        sendMessage(message);
-                    }
-                }
+            processMessageQueue();
+        }
+    }
+
+    private void processMessageQueue() {
+        if (!PeerProcess.msgPool.isEmpty()) {
+            sendMessageFromQueue();
+        }
+    }
+
+    private void sendMessageFromQueue() {
+        synchronized (PeerProcess.msgPool) {
+            Message message = PeerProcess.msgPool.poll();
+            if (message != null) {
+                sendMessage(message);
             }
         }
     }
 
     private void sendMessage(Message message) {
         if (isValidMessage(message.getMessage())) {
-            try {
-                Socket socket = message.getSock();
-                ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                synchronized (socket) {
-                    outputStream.writeObject(message.getMessage());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            sendValidMessage(message);
         } else {
-            System.out.println("Invalid message entered in pool");
+            handleInvalidMessage();
         }
+    }
+
+    private void sendValidMessage(Message message) {
+        try {
+            Socket socket = message.getSock();
+            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+            synchronized (socket) {
+                outputStream.writeObject(message.getMessage());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleInvalidMessage() {
+        System.out.println("Invalid message entered in pool");
     }
 
     private boolean isValidMessage(byte[] message) {

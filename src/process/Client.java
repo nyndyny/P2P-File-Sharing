@@ -1,29 +1,32 @@
 package process;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import java.nio.charset.StandardCharsets;
-
-import peer.Handshake;
-import peer.PeerInfo;
-
 import configure.Logs;
 import configure.PeerInfoParser;
-import peer.PeerConnection;
-import peer.PeerProcess;
 import messageTypes.Bitfield;
+import peer.Handshake;
+import peer.PeerConnection;
+import peer.PeerInfo;
+import peer.PeerProcess;
+
+import java.io.*;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Vector;
 
 public class Client extends Thread {
+	private static final String EXPECTED_HEADER_VALUE = "P2PFILESHARINGPROJ0000000000";
+
 	private int peerID;
 	private int port;
 	private String peerIP;
-	private ArrayList<String[]> arr = new ArrayList<String[]>();
+	private ArrayList<String[]> arr = new ArrayList<>();
 	private int numPieces;
 	private long fileSize;
 	private long pieceSize;
 	private boolean completeFile;
-	private String EXPECTED_HEADER_VALUE = "P2PFILESHARINGPROJ0000000000";
 
 	private Vector<PeerInfo> remotePeers;
 
@@ -52,90 +55,37 @@ public class Client extends Thread {
 			String[] infoArr = itr.next();
 			peerIP = infoArr[1];
 			port = Integer.parseInt(infoArr[2]);
+			Socket sock = null;
 
 			try {
 				System.out.println("Inside client " + peerIP);
-				Socket sock = new Socket(peerIP, port);
-				Handshake sendHS = new Handshake(peerID);
-				handShakeSender(sock, sendHS.content);
-				System.out.println("Sent Handshake.");
+				sock = new Socket(peerIP, port);
+				performHandshake(sock);
 
-				// Receiving handshake from recently connected peer
-				byte[] recvHSContent = handShakeReceiver(sock);
-				// Extracting head from content
-				String head = new String(Arrays.copyOfRange(recvHSContent, 0, 28), StandardCharsets.UTF_8);
-				System.out.println(head);
-				// Extracting peer id from content
-				String peerIDStr = new String(Arrays.copyOfRange(recvHSContent, 28, 32)).trim();
-				int rcvdID = Integer.parseInt(peerIDStr);
+				byte[] recvHSContent = receiveHandshake(sock);
+				processReceivedHandshake(recvHSContent, infoArr, sock);
 
-				// Check header value
-				if (head.equals(EXPECTED_HEADER_VALUE)) {
-					System.out.println("Head confirmed.");
-					boolean flag = false;
-					Iterator<Integer> itr2 = PeerProcess.peerIDList.iterator();
-
-					// Checking for ID in handshake content
-					while (itr2.hasNext()) {
-						int tid = itr2.next();
-
-						if (tid != peerID && tid == rcvdID) {
-							flag = true;
-							break;
-						}
-					}
-
-					if (flag) {
-						// Populate Peer Object with appropriate values.
-						PeerInfo peer = new PeerInfo();
-						peer.setPersPeerID(peerID);
-						peer.setSock(sock);
-						peer.setPeerID(Integer.parseInt(infoArr[0]));
-
-						// Receive bitfield from the peer
-						byte[] rcvdField = recieveBitfield(sock);
-						peer.setBitfield(rcvdField);
-
-						// Send bitfield of available pieces to connected peer
-						sendBitfield(sock);
-						peer.setInterested(false);
-
-						synchronized (PeerProcess.peersList) {
-							PeerProcess.peersList.add(peer);
-							Thread.sleep(1);
-						}
-
-						PeerConnection completeFile = new PeerConnection();
-						completeFile.setSocket(sock);
-						completeFile.setCompleteFileDownloaded(false);
-
-						PeerProcess.hasFullFile.add(completeFile);
-
-						System.out.println("Requesting Connection to PeerID: " + Integer.parseInt(infoArr[0]));
-						System.out.println();
-						Logs.makingTCPConnection(Integer.parseInt(infoArr[0]));
-
-						Sender ms = new Sender();
-						ms.start();
-
-						RequestPiece pr = new RequestPiece(Integer.parseInt(infoArr[0]), numPieces, this.completeFile,
-								fileSize, pieceSize);
-						pr.start();
-
-						Receiver mr = new Receiver(peerID, rcvdID, sock, pieceSize);
-						mr.start();
-					} else {
-						System.out.println("Unknown Peer Found.");
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (sock != null && !sock.isClosed()) {
+					try {
+						sock.close();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				}
-
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 	}
 
-	private byte[] handShakeReceiver(Socket sock) {
+	private void performHandshake(Socket sock) throws IOException {
+		Handshake sendHS = new Handshake(peerID);
+		handShakeSender(sock, sendHS.content);
+		System.out.println("Sent Handshake.");
+	}
+
+	private byte[] receiveHandshake(Socket sock) {
 		byte[] content = null;
 		try {
 			ObjectInputStream in = new ObjectInputStream(sock.getInputStream());
@@ -146,11 +96,77 @@ public class Client extends Thread {
 		return content;
 	}
 
+	private void processReceivedHandshake(byte[] recvHSContent, String[] infoArr, Socket sock) {
+		String head = new String(Arrays.copyOfRange(recvHSContent, 0, 28), StandardCharsets.UTF_8);
+		System.out.println(head);
+
+		String peerIDStr = new String(Arrays.copyOfRange(recvHSContent, 28, 32)).trim();
+		int rcvdID = Integer.parseInt(peerIDStr);
+
+		if (head.equals(EXPECTED_HEADER_VALUE) && isRemotePeerValid(rcvdID)) {
+			System.out.println("Head confirmed.");
+			PeerInfo peer = createPeerInfo(infoArr, rcvdID, sock);
+
+			startCommunicationThreads(infoArr, sock, peer);
+
+		} else {
+			System.out.println("Unknown Peer Found.");
+		}
+	}
+
+	private boolean isRemotePeerValid(int rcvdID) {
+		return PeerProcess.peerIDList.stream().anyMatch(tid -> tid != peerID && tid == rcvdID);
+	}
+
+	private PeerInfo createPeerInfo(String[] infoArr, int rcvdID, Socket sock) {
+		PeerInfo peer = new PeerInfo();
+		peer.setPersPeerID(peerID);
+		peer.setSock(sock);
+		peer.setPeerID(Integer.parseInt(infoArr[0]));
+
+		byte[] rcvdField = recieveBitfield(sock);
+		peer.setBitfield(rcvdField);
+
+		sendBitfield(sock);
+		peer.setInterested(false);
+
+		synchronized (PeerProcess.peersList) {
+			PeerProcess.peersList.add(peer);
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		PeerConnection completeFile = new PeerConnection();
+		completeFile.setSocket(sock);
+		completeFile.setCompleteFileDownloaded(false);
+
+		PeerProcess.hasFullFile.add(completeFile);
+
+		System.out.println("Requesting Connection to PeerID: " + Integer.parseInt(infoArr[0]));
+		System.out.println();
+		Logs.makingTCPConnection(Integer.parseInt(infoArr[0]));
+
+		return peer;
+	}
+
+	private void startCommunicationThreads(String[] infoArr, Socket sock, PeerInfo peer) {
+		Sender ms = new Sender();
+		ms.start();
+
+		RequestPiece pr = new RequestPiece(Integer.parseInt(infoArr[0]), numPieces, this.completeFile, fileSize,
+				pieceSize);
+		pr.start();
+
+		Receiver mr = new Receiver(peerID, peer.getPeerID(), sock, pieceSize);
+		mr.start();
+	}
+
 	private byte[] recieveBitfield(Socket sock) {
 		byte[] bf = null;
-		ObjectInputStream in;
-		try {
-			in = new ObjectInputStream(sock.getInputStream());
+		try (ObjectInputStream in = new ObjectInputStream(sock.getInputStream())) {
 			bf = (byte[]) in.readObject();
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
@@ -159,9 +175,7 @@ public class Client extends Thread {
 	}
 
 	private void handShakeSender(Socket sock, byte[] content) {
-		ObjectOutputStream out;
-		try {
-			out = new ObjectOutputStream(sock.getOutputStream());
+		try (ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream())) {
 			out.writeObject(content);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -169,106 +183,10 @@ public class Client extends Thread {
 	}
 
 	private void sendBitfield(Socket sock) {
-
-		try {
-			ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream());
+		try (ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream())) {
 			out.writeObject(Bitfield.bitFieldBytes);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
-	// public void run() {
-	// for (PeerInfo peer : remotePeers) {
-	// try {
-	// new ServerHandler(new Socket(peer.peerAddress, peer.peerPort),
-	// peer.peerID).start();
-	// System.out.println("Connected to '" + peer.peerAddress + "' in port " +
-	// peer.peerPort + ".");
-	// } catch (IOException ioException) {
-	// System.out.println(ioException.toString());
-	// }
-	// }
-
-	// }
-
-	// public class ServerHandler extends Thread {
-	// private Socket requestSocket; // socket connect to the server
-	// private ObjectOutputStream out; // stream write to the socket
-	// private ObjectInputStream in; // stream read from the socket
-	// private String message; // message send to the server
-	// private String MESSAGE; // capitalized message read from the server
-	// private String address;
-	// private int remoteID;
-
-	// public ServerHandler(Socket reqSocket, int rID) {
-	// requestSocket = reqSocket;
-	// remoteID = rID;
-	// }
-
-	// public void run() {
-	// try {
-	// // create a socket to connect to the server
-
-	// // initialize inputStream and outputStream
-	// out = new ObjectOutputStream(requestSocket.getOutputStream());
-	// in = new ObjectInputStream(requestSocket.getInputStream());
-	// out.flush();
-
-	// boolean greeted = false;
-	// Handshake handshake = new Handshake(peerID);
-	// sendMessage(handshake.message);
-
-	// System.out.println("Handshake sent.");
-
-	// try {
-	// while (true) {
-	// // receive the message sent from the client
-	// if (!greeted) {
-	// message = (String) in.readObject();
-
-	// if (message.getBytes().length == 32 && message.startsWith(Handshake.header))
-	// {
-	// System.out.println("Handshake received.");
-	// greeted = true;
-
-	// // TODO: ONE TIME BITFIELD MESSAGES
-	// }
-	// } else {
-	// // TODO: MESSAGES SENT AFTER HANDSHAKE AND BITFIELD
-	// }
-	// }
-	// } catch (ClassNotFoundException classnot) {
-	// System.err.println("Data received in unknown format");
-	// }
-	// } catch (ConnectException e) {
-	// System.err.println("Connection refused. You need to initiate a server
-	// first.");
-	// } catch (UnknownHostException unknownHost) {
-	// System.err.println("You are trying to connect to an unknown host!");
-	// } catch (IOException ioException) {
-	// ioException.printStackTrace();
-	// } finally {
-	// // Close connections
-	// try {
-	// in.close();
-	// out.close();
-	// requestSocket.close();
-	// } catch (IOException ioException) {
-	// ioException.printStackTrace();
-	// }
-	// }
-	// }
-
-	// // send a message to the output stream
-	// void sendMessage(String msg) {
-	// try {
-	// // stream write the message
-	// out.writeObject(msg);
-	// out.flush();
-	// } catch (IOException ioException) {
-	// ioException.printStackTrace();
-	// }
-	// }
-	// }
 }
